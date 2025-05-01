@@ -1,4 +1,4 @@
-# Heart Disease Prediction App 💓
+# Heart Disease Prediction 💓
 
 ❤️ Welcome to the Heart Disease Prediction App! This Flask-based web application uses a Random Forest model to predict the likelihood of heart disease based on user inputs. The app features a modern UI with a heart icon ❤️, responsive input fields, and convenient reset/GitHub icons. Let's dive in! 🚀
 
