@@ -1,8 +1,9 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, session
 import joblib
 import numpy as np
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key'  # Required for session management
 
 # Load the trained Random Forest model
 model = joblib.load('random_forest_model.pkl')
@@ -47,7 +48,16 @@ FEATURE_INFO = {
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', feature_info=FEATURE_INFO, ranges=RANGES)
+    # Clear session form data unless it's a back navigation
+    if not request.headers.get('Referer', '').endswith('/predict'):
+        session.pop('form_data', None)
+    form_data = session.get('form_data', None)
+    response = make_response(render_template('index/index.html', feature_info=FEATURE_INFO, ranges=RANGES, form_data=form_data, errors=None))
+    # Prevent browser caching to avoid BFCache issues
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -105,6 +115,10 @@ def predict():
         
         # For form submissions
         else:
+            # Check for intentional submission
+            if request.form.get('submission_intent') != 'predict':
+                return redirect(url_for('index'))
+            
             input_data = []
             errors = []
             
@@ -132,8 +146,11 @@ def predict():
                 
                 input_data.append(value)
             
+            # Store form data in session for back navigation
+            session['form_data'] = request.form.to_dict()
+            
             if errors:
-                return render_template('index.html', 
+                return render_template('index/index.html', 
                                       errors=errors, 
                                       feature_info=FEATURE_INFO, 
                                       ranges=RANGES,
@@ -156,7 +173,11 @@ def predict():
                 'data': dict(zip(FEATURES, input_data))
             }
             
-            return render_template('result.html', result=result, feature_info=FEATURE_INFO)
+            response = make_response(render_template('result/result.html', result=result, feature_info=FEATURE_INFO))
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            return response
     
     except Exception as e:
         if request.is_json:
@@ -165,15 +186,31 @@ def predict():
                 'error': str(e)
             }), 500
         else:
-            return render_template('index.html', 
+            return render_template('index/index.html', 
                                   errors=[f"An error occurred: {str(e)}"],
                                   feature_info=FEATURE_INFO,
                                   ranges=RANGES,
                                   form_data=request.form)
 
+@app.route('/reset', methods=['GET'])
+def reset():
+    # Clear session form data for "Make Another Prediction" or "Home"
+    session.pop('form_data', None)
+    return redirect(url_for('index'))
+
+@app.route('/clear-session', methods=['POST'])
+def clear_session():
+    # Clear session form data for reset button
+    session.pop('form_data', None)
+    return jsonify({'success': True})
+
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    response = make_response(render_template('about.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
