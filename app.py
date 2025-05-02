@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify, make_response, session
 import joblib
 import numpy as np
-import os  # Added for debugging
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'  # Required for session management
@@ -15,19 +14,19 @@ FEATURES = [
     'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal'
 ]
 RANGES = {
-    'age': (20, 100),
-    'sex': [0, 1],
-    'cp': [0, 1, 2, 3],
-    'trestbps': (80, 200),
-    'chol': (100, 600),
-    'fbs': [0, 1],
-    'restecg': [0, 1, 2],
-    'thalach': (60, 220),
-    'exang': [0, 1],
-    'oldpeak': (0, 6.2),
-    'slope': [0, 1, 2],
-    'ca': [0, 1, 2, 3],
-    'thal': [1, 2, 3]
+    'age': (20, 100),           # Reasonable age range
+    'sex': [0, 1],             # 0 = female, 1 = male
+    'cp': [0, 1, 2, 3],        # Chest pain type
+    'trestbps': (80, 200),     # Resting blood pressure (mm Hg)
+    'chol': (100, 600),        # Cholesterol (mg/dl)
+    'fbs': [0, 1],             # Fasting blood sugar (0 = <=120, 1 = >120)
+    'restecg': [0, 1, 2],      # Resting ECG results
+    'thalach': (60, 220),      # Maximum heart rate
+    'exang': [0, 1],           # Exercise-induced angina (0 = no, 1 = yes)
+    'oldpeak': (0, 6.2),       # ST depression
+    'slope': [0, 1, 2],        # Slope of ST segment
+    'ca': [0, 1, 2, 3],        # Number of major vessels
+    'thal': [1, 2, 3]          # Thalassemia
 }
 
 # Feature descriptions for tooltips
@@ -49,19 +48,12 @@ FEATURE_INFO = {
 
 @app.route('/', methods=['GET'])
 def index():
-    # Debug: Print template directory and contents
-    print("Template directory:", app.template_folder)
-    print("Templates available:", os.listdir(app.template_folder))
-    try:
-        print("Index folder contents:", os.listdir(os.path.join(app.template_folder, 'index')))
-    except Exception as e:
-        print("Error accessing index folder:", str(e))
-    
     # Clear session form data unless it's a back navigation
     if not request.headers.get('Referer', '').endswith('/predict'):
         session.pop('form_data', None)
     form_data = session.get('form_data', None)
     response = make_response(render_template('index/index.html', feature_info=FEATURE_INFO, ranges=RANGES, form_data=form_data, errors=None))
+    # Prevent browser caching to avoid BFCache issues
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -83,6 +75,7 @@ def predict():
                     }), 400
                 
                 value = data[feature]
+                # Convert to float and validate
                 try:
                     value = float(value)
                 except ValueError:
@@ -91,6 +84,7 @@ def predict():
                         'error': f"Invalid value for {feature}: must be a number"
                     }), 400
                 
+                # Validate ranges
                 if feature in ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal']:
                     if value not in RANGES[feature]:
                         return jsonify({
@@ -107,6 +101,7 @@ def predict():
                 
                 input_data.append(value)
             
+            # Make prediction
             input_array = np.array([input_data])
             prediction = int(model.predict(input_array)[0])
             probability = float(model.predict_proba(input_array)[0][1])
@@ -120,6 +115,7 @@ def predict():
         
         # For form submissions
         else:
+            # Check for intentional submission
             if request.form.get('submission_intent') != 'predict':
                 return redirect(url_for('index'))
             
@@ -132,12 +128,14 @@ def predict():
                     errors.append(f"Missing value for {feature}")
                     continue
 
+                # Convert to float and validate
                 try:
                     value = float(value)
                 except ValueError:
                     errors.append(f"Invalid value for {feature}: must be a number")
                     continue
                 
+                # Validate ranges
                 if feature in ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal']:
                     if value not in RANGES[feature]:
                         errors.append(f"Invalid value for {feature}: {value}")
@@ -148,6 +146,7 @@ def predict():
                 
                 input_data.append(value)
             
+            # Store form data in session for back navigation
             session['form_data'] = request.form.to_dict()
             
             if errors:
@@ -157,9 +156,14 @@ def predict():
                                       ranges=RANGES,
                                       form_data=request.form)
             
+            # Prepare input for model
             input_array = np.array([input_data])
+            
+            # Make prediction
             prediction = int(model.predict(input_array)[0])
             probability = float(model.predict_proba(input_array)[0][1])
+            
+            # Format probability as percentage
             probability_percent = round(probability * 100, 1)
             
             result = {
@@ -190,11 +194,13 @@ def predict():
 
 @app.route('/reset', methods=['GET'])
 def reset():
+    # Clear session form data for "Make Another Prediction" or "Home"
     session.pop('form_data', None)
     return redirect(url_for('index'))
 
 @app.route('/clear-session', methods=['POST'])
 def clear_session():
+    # Clear session form data for reset button
     session.pop('form_data', None)
     return jsonify({'success': True})
 
@@ -207,5 +213,4 @@ def about():
     return response
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))  # Use Render's PORT env variable
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)
