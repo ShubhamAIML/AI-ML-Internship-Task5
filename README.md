@@ -94,19 +94,30 @@ python app.py
 ## File Structure 📁
 ```
 heart-disease-prediction/
+├── static/
+│   ├── index/
+│   │   ├── index.css
+│   │   └── index.js
+│   └── result/
+│       ├── result.css
+│       └── result.js
 ├── templates/
-│   ├── index.html
-│   └── result.html
+│   ├── index/
+│   │   └── index.html
+│   └── result/
+│       └── result.html
+├── Procfile
+├── README.md
 ├── app.py
-├── random_forest_model.pkl
-├── decision_tree_model.pkl
-├── heart.csv
+├── requirements.txt
 ├── cleaned_heart.csv
-├── visualizations/
-│   ├── decision_tree.png
-│   ├── dt_accuracy_vs_depth.png
-│   └── feature_importances.png
-└── README.md
+├── decision_tree.png
+├── decision_tree_model.pkl
+├── dt_accuracy_vs_depth.png
+├── feature_importances.png
+├── heart.csv
+├── random_forest_model.pkl
+└── task_5.pdf
 ```
 
 ## Deployment 🚀
