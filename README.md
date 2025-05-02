@@ -2,7 +2,7 @@
 
 **Welcome to the Heart Disease Prediction Project!**  
 
-This project is part of my **AI & ML Internship Task 5** at **Elevale**, focusing on tree-based models for classification. I trained both a **Decision Tree** and a **Random Forest Classifier** on the **Heart Disease Dataset**, evaluated their performance, and built an additional **Flask web app** to make predictions accessible to users. The app is deployed on **Render** for live usage! 🚀  
+This project is part of my **AI & ML Internship Task 5** at **Elevate**, focusing on tree-based models for classification. I trained both a **Decision Tree** and a **Random Forest Classifier** on the **Heart Disease Dataset**, evaluated their performance, and built an additional **Flask web app** to make predictions accessible to users. The app is deployed on **Render** for live usage! 🚀  
 
 ---
 
