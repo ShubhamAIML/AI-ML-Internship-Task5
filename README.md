@@ -23,7 +23,7 @@ As an additional effort, I built a **Flask web application** to allow users to i
 ### 🔗 **Live Demo**  
 
 Try the **Heart Disease Prediction Tool** here:  
-👉 **[Heart Disease Prediction App](https://heart-disease-prediction-e8pu.onrender.com/)** 👈  
+👉 **[Heart Disease Prediction App](https://heart-disease-prediction-ujuq.onrender.com/)** 👈  
 
 ---
 
